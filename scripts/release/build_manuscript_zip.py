@@ -90,7 +90,7 @@ latexmk -xelatex main.tex
 - `assets/`: Figure 1에 필요한 Python·Magma·Lean 로고.
 - `figures/`: Figure 1–5의 PDF/SVG 참고용 파일과 Figure 5의 전체 네 패널
   기록. 본문은 `main.tex` 안의 TikZ 소스로 그림을 그립니다.
-- `iclr2027_conference.sty`, `iclr2027_conference.bst`, `natbib.sty`,
+- `conference.sty`, `conference.bst`, `natbib.sty`,
   `fancyhdr.sty`: 제출 스타일 파일입니다.
 
 Figure 6의 DAG도 `main.tex`에 TikZ로 포함되어 있습니다. 논문 컴파일에는
@@ -147,8 +147,8 @@ def main():
 
     for name in (
         "refs.bib",
-        "iclr2027_conference.sty",
-        "iclr2027_conference.bst",
+        "conference.sty",
+        "conference.bst",
         "natbib.sty",
         "fancyhdr.sty",
     ):
