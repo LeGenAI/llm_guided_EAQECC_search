@@ -1,0 +1,71 @@
+\subsection{Entanglement-assisted quantum error-correcting codes}
+\label{sec:ea-background}
+
+Quantum error correction protects quantum information sent through noisy
+communication links. Early stabilizer constructions imposed algebraic
+compatibility constraints that limited which classical codes could be
+reused. \citet{BrunDevetakHsieh2006} showed that entanglement shared in
+advance between sender and receiver relaxes these constraints, enabling
+a broader class of quantum codes. This is the motivation for
+entanglement-assisted quantum error-correcting codes (EAQECCs).
+
+A code with parameters $[[n,k,d;c]]_q$ encodes $k$ logical qudits into
+$n$ transmitted $q$-level systems using $c$ shared maximally entangled
+qudit pairs. Each pair contains $\log_2 q$ ebits, equal to one for
+qubits ($q=2$)~\citep{GHW2022}. The receiver's
+halves are assumed noiseless and are not counted in $n$.
+
+The distance $d$ determines the code's guaranteed error protection.
+With ideal decoding, it corrects arbitrary errors on up to
+$\lfloor(d-1)/2\rfloor$ transmitted qudits, or up to $d-1$
+\emph{erasures}, where the lost qudits' locations are
+known~\citep{BrunDevetakHsieh2006,GHW2022}. Increasing $d$ at fixed
+$(q,n,k,c)$ strengthens protection without increasing the transmission or
+entanglement budget. For example, our $[[12,1,11;8]]_2$ code raises
+the listed distance from 9 to 11, increasing the guaranteed correction
+of arbitrary errors from four to five transmitted qubits with the same
+resources (Table~\ref{tab:results}). A verified code thus provides an
+encoding specification for a quantum link with given resource and
+error-protection requirements. Reducing $c$ at fixed $(n,k,d)$ instead
+lowers the entanglement needed before transmission~\citep{Luo2022}.
+
+\subsection{Code discovery as program search}
+\label{sec:tables-search-background}
+
+We search linear stabilizer EAQECCs represented by generator matrices
+over $\F_q$. The LLM revises a search program that proposes matrices;
+an exact evaluator computes their $(k,c,d)$. At fixed $(q,n,k,c)$,
+reference tables give a constructed lower distance bound $d_\ell$ and
+an upper bound $d_u$~\citep{Codetables,Luo2022}. Finding $d>d_\ell$
+improves the lower bound, while reaching $d_u$ closes the gap.
+We also construct codes at unlisted cells and minimize entanglement,
+denoted $\cmins(n,k,d)$ within our stabilizer class. Applicable bounds
+filter impossible targets~\citep{GHW2022}; Appendix~\ref{app:domain}
+gives the representation, notation and comparison rules.
+
+\textsc{FunSearch} evolves programs that construct mathematical objects or
+make algorithmic decisions, using an evaluator to select useful revisions.
+It produced larger cap-set constructions and improved online bin-packing
+heuristics~\citep{FunSearch}; its executable outputs let researchers inspect
+and develop the underlying mathematical ideas. \textsc{AlphaEvolve}
+extends this approach to matrix-multiplication algorithms, data-center
+scheduling, hardware-circuit simplification and model-training
+kernels~\citep{AlphaEvolve,Georgiev2025}. Related frameworks include
+\textsc{OpenEvolve}, \textsc{CodeEvolve}, \textsc{ShinkaEvolve} and
+\textsc{TurboEvolve}, which implement or extend evaluator-guided program
+evolution with population management and proposal-selection
+strategies~\citep{OpenEvolve,CodeEvolve,ShinkaEvolve,TurboEvolve}.
+We use \textsc{AlphaEvolve} as the evolution engine for EAQECC discovery,
+supplying target parameters, an exact evaluator and researcher-directed
+construction ideas.
+
+Quantum-code discovery also uses genetic algorithms to evolve stabilizer
+representations~\citep{WebsterBrowne2024}, and reinforcement learning to
+optimize codes and encoders~\citep{Nautrup2019,Su2023,Mauron2023,Olle2024}.
+More directly, \citet{CruzBenito2026} evolve Python generators for
+bivariate bicycle codes, verify candidates, and derive structural results.
+Our contribution concerns EAQECC distance--entanglement targets: exact
+finite-field evaluation supports finite constructions, a prime-power
+family with a Lean-checked algebraic certificate, and certified
+nonexistence results. The controlled study compares independent proposals
+with iterative program feedback under a shared researcher proposal.

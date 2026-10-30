@@ -1,0 +1,14 @@
+cff-version: 1.2.0
+message: "If you use this pipeline or its archive, please cite the paper."
+title: "Researcher-in-the-loop Evolutionary Discovery of entanglement-assisted quantum code families"
+authors:
+  - family-names: "Baek"
+    given-names: "Jae-Hyun"
+  - family-names: "Won"
+    given-names: "Byung-Sun"
+  - family-names: "Kim"
+    given-names: "Jon-Lark"
+year: 2026
+type: software
+license: MIT
+repository-code: "https://github.com/LeGenAI/llm_guided_EAQECC_search"

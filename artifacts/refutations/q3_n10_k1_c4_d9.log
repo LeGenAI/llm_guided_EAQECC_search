@@ -1,0 +1,2 @@
+CNF: 33033 vars, 476221 clauses -> q3_n10_k1_c4_d9.cnf
+UNSAT: no [[10,1,9;4]]_3 EAQECC exists (free radical, complete search space)

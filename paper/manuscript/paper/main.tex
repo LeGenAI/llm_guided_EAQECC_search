@@ -1,0 +1,1022 @@
+\ifdefined\pdftexversion\pdfoutput=1\fi % arXiv: build with pdfLaTeX
+\documentclass{article}
+% T1 encoding lets the Times/Courier of the `times' package load under
+% both pdfTeX and XeTeX-based builds (tectonic); without it XeTeX silently
+% falls back to Latin Modern and drops every bold and monospace shape.
+\usepackage[T1]{fontenc}
+\usepackage{iclr2027_conference,times}
+\iclrfinalcopy
+
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{tabularx}
+\usepackage{graphicx}
+\usepackage{flafter}
+\usepackage{placeins}
+\usepackage{listings}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{tikz}
+\usetikzlibrary{positioning,arrows.meta,fit,calc}
+\usepackage{xcolor}
+\usepackage[most]{tcolorbox}
+\usepackage[hidelinks]{hyperref}
+\usepackage{url}
+
+\lstset{basicstyle=\ttfamily\footnotesize, breaklines=true,
+  columns=fullflexible, keepspaces=true}
+% ---- figure palette (colour-blind safe, print-legible) ----
+\definecolor{achieve}{RGB}{31,119,120}
+\definecolor{refute}{RGB}{178,58,50}
+\definecolor{bdh}{RGB}{110,110,118}
+
+% Five floats in one section otherwise pile up and drift pages away from
+% the text that discusses them; loosen the default placement limits.
+\renewcommand{\topfraction}{0.85}
+\renewcommand{\bottomfraction}{0.5}
+\renewcommand{\textfraction}{0.08}
+\renewcommand{\floatpagefraction}{0.75}
+\setcounter{topnumber}{2}
+\setcounter{bottomnumber}{1}
+\setcounter{totalnumber}{3}
+
+\newcommand{\algdelta}[1]{\begingroup\setlength{\fboxsep}{0.65pt}\colorbox{achieve!13}{#1}\endgroup}
+\newcommand{\algside}[1]{\Comment{\parbox[t]{.34\linewidth}{\raggedright\footnotesize #1}}}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\newcommand{\F}{\mathbb{F}}
+\newcommand{\artifactlink}{\href{https://github.com/LeGenAI/llm_guided_EAQECC_search/tree/arxiv-v1}{artifact}}
+\newcommand{\vct}[1]{\boldsymbol{#1}} % vectors; coordinates and coefficients remain scalar
+\newcommand{\wt}{\operatorname{wt_s}}
+\newcommand{\cmins}{c^{\mathrm{s}}_{\min}}
+\newcommand{\claim}[1]{\textbf{\texttt{#1}}}   % auditor claim names
+
+\title{Researcher-in-the-loop\\
+  Evolutionary Discovery of\\
+  entanglement-assisted quantum code families}
+\author{Jae-Hyun Baek$^{1,2}$ \quad Byung-Sun Won$^{3}$ \quad Jon-Lark Kim$^{4,2}$\thanks{Corresponding author: \texttt{jlkim@sogang.ac.kr}} \\
+$^{1}$Department of Artificial Intelligence, Sogang University, Seoul, Korea \\
+$^{2}$Institute for Mathematical and Data Sciences, Sogang University, Seoul, Korea \\
+$^{3}$Ewha Institute of Mathematical Sciences, Ewha Womans University, Seoul, Korea \\
+$^{4}$Department of Mathematics, Sogang University, Seoul, Korea}
+
+\begin{document}
+\maketitle
+\lhead{}\renewcommand{\headrulewidth}{0pt}
+
+\begin{abstract}
+LLM-guided program evolution can produce mathematical constructions,
+but validity, generality, and reproducibility require distinct evidence.
+We develop a researcher-in-the-loop discovery pipeline that combines
+program evolution, exact evaluation, mathematical generalization,
+certified nonexistence checks, and formal proof checking. We apply it
+to entanglement-assisted quantum error-correcting codes (EAQECCs).
+Starting from tasks that did not specify a family formula, evolved
+programs produced finite qubit constructions whose structure researchers
+generalized to the family $[[n,1,n-1;n-q-1]]_q$ for prime powers
+$q\ge3$ at $n\ge2q+1$ and for $q=2$ at odd $n\ge5$. Lean checks the
+algebraic certificate underlying this family. Together with entanglement
+lifting, the family closes 54 gaps in archived EAQECC tables. The
+released evidence includes 115 verified code records, ten nonexistence
+results with checked DRAT proofs, family implementations, and preserved
+search programs for exact checks and seeded replay. In a controlled
+cohort of eight paired generation blocks, validation-selected iterative
+programs achieve success in 46.1\% and 31.6\% of held-out executions at
+unseen lengths $n=13,15$, compared with 19.5\% and 3.1\% for independently
+generated programs. In this setting, program evolution and researcher
+analysis turn finite computational discoveries into a proved family
+with independently checkable evidence.
+\end{abstract}
+
+%==============================================================
+\section{Introduction}
+%==============================================================
+
+LLM-guided program search has produced mathematical constructions and
+algorithms~\citep{FunSearch,AlphaEvolve}. Their outputs can also support
+general mathematical results through researcher analysis. This raises
+three questions: \emph{whether evolved programs produce valid codes,
+whether their structure can be generalized and proved to work beyond
+the searched cases, and whether the resulting constructions and preserved
+searches can be independently reproduced}. Addressing these questions
+requires records of the initial task, computational discoveries and
+subsequent mathematical analysis.
+
+We study this process for entanglement-assisted quantum error-correcting
+codes (EAQECCs). Early AlphaEvolve searches produced finite qubit codes
+whose structure led us to an infinite qubit family. Further mathematical
+generalization gives the prime-power construction and proof in
+Theorem~\ref{thm:unified}. The initial instructions suggested directions
+such as cyclic shifts, but did not provide this family formula.
+Later instructions explicitly incorporated the discovered qubit family
+(Appendix~\ref{app:prompts}), allowing it to guide further searches.
+
+Our reproducibility contribution concerns these mathematical
+constructions and their computational evidence. The \artifactlink{} supplies
+code matrices, family implementations, proofs, task specifications and
+preserved search programs. Readers can recompute code parameters,
+construct and verify family instances, inspect the proof and replay
+preserved searches. Figure~\ref{fig:overview} summarizes how researcher
+analysis and program evolution interact. Section~\ref{sec:repro}
+specifies which operations are reproducible. A final Lean stage checks
+the algebraic construction underlying Theorem~\ref{thm:unified} (Appendix~\ref{app:lean}); model generation
+remains stochastic.
+
+Several improvements concern constructions published in 2020 and 2022
+that remained listed in the EAQECC tables accessed on 17 July
+2026~\citep{GHW2020,Luo2022}. Our constructions and certified exclusions
+close nine previously tabulated qubit distance gaps (Table~\ref{tab:results}).
+The prior constructions predate our table access by approximately four
+to six years. Their dates document available constructions rather than
+a complete history of improvement attempts.
+
+Our contributions are:
+\begin{itemize}\setlength{\itemsep}{1pt}
+\item \textbf{A researcher-in-the-loop discovery pipeline.}
+  We connect LLM-guided program evolution with researcher proposals,
+  mathematical generalization and formal proof checking for EAQECC
+  discovery. Preserved programs, code matrices and formal certificates
+  support reconstruction and independent verification of the resulting
+  constructions (Sections~\ref{sec:pipeline} and~\ref{sec:repro}).
+\item \textbf{General constructions from evolved program outputs.}
+  Finite qubit constructions led to the general family of
+  Theorem~\ref{thm:unified}, whose algebraic construction is checked in Lean.
+  The family and entanglement lifting close 54 listed gaps, while checked
+  nonexistence certificates establish selected optimality and
+  minimum-entanglement results (Section~\ref{sec:results}).
+\item \textbf{Program development and generalization.} We compare
+  independent and iterative generation under shared research guidance.
+  Eight new generation blocks yield longer-code success of 46.1\% and
+  31.6\% for iterative programs, versus 19.5\% and 3.1\% for independent
+  proposals at $n=13,15$. Preserved lineages identify useful objective and
+  search-policy changes (Section~\ref{sec:ablation}).
+\end{itemize}
+
+%==============================================================
+\section{Background and related work}\label{sec:related}
+%==============================================================
+
+\input{background}
+
+%==============================================================
+\section{The researcher-in-the-loop discovery pipeline}\label{sec:pipeline}
+%==============================================================
+
+Our discovery pipeline combines human-in-the-loop (HITL) research with
+LLM-guided program evolution and exact verification. Researchers propose
+construction ideas, inspect verified instances and revise the task between
+campaigns. Figure~\ref{fig:overview} connects these interventions to the
+automated search and evaluation loop. Constructed codes establish lower
+distance bounds; SAT refutations with checked certificates lower upper
+bounds. Independent verification and archived evidence support both routes.
+Researchers generalize the discovered constructions and develop proofs,
+then pass the formalized statements and proofs to the Lean checking stage.
+
+\input{fig_overview}
+
+\subsection{Target selection}
+
+We compare our constructions with the bounds listed in the EAQECC tables
+(\texttt{codetables.de}), accessed on 17 July 2026. These reference bounds
+define listed-gap and absent-cell targets, filtered using the EA-Plotkin
+and applicable Singleton bounds. EA-Plotkin also tightens 398 upper bounds
+in the reference qubit table. Appendix~\ref{app:tables} gives the table
+records and filters. The artifact preserves these comparison data and
+uses them by default. A second copy, retrieved on 10 September 2026,
+contains identical intervals at all 11,640 qubit and qutrit entries.
+
+\subsection{LLM-guided program evolution}
+
+The qubit discovery campaigns use AlphaEvolve~\citep{AlphaEvolve} through
+Google Cloud Vertex AI. We provide a seed program, task specification
+and exact evaluator; AlphaEvolve generates revisions and archives their
+source and outcomes. An LLM modifies a designated block of the seed.
+Within each candidate program, an exact parameter oracle evaluates
+intermediate matrices; the program uses these results to choose targets,
+accept local moves and restart search. Algorithm~\ref{alg:search}, for
+example, minimizes a cost combining signature mismatch and the number
+of logical operators below the target distance.
+
+After the program returns up to 16 matrices, the external evaluator
+recomputes their parameters and assigns the best proposal score to the
+program. Its reward favors a valid signature, fewer low-weight logical
+operators and newly achieved targets. This reward guides the next program
+revision; the inner cost guides matrix search within one execution.
+Independent code checking follows in Section~\ref{sec:refute}.
+
+Each candidate runs in its own subprocess with a fixed 240\,s budget
+and a specified seed for its random-number generator. Failures receive a low score, and the campaign continues.
+The same interface supports fixed-program replay (Section~\ref{sec:repro}).
+The four campaign logs record $401$ completed candidate searches,
+corresponding to $26.7$\,h of allocated search budget
+(Appendix~\ref{app:campaign}).
+
+The initial task specification did not contain the family proved in
+Theorem~\ref{thm:unified}. We started with an annealing seed and instructions suggesting cyclic
+shifts among other construction directions. Evolved programs produced finite qubit codes; analysis of
+their structure led researchers to a general qubit family and its proof.
+The later task specifications included that family and requested further
+constructions, while the best program was reused as a new seed.
+These records distinguish the initial discovery stage from subsequent
+search using the mathematical result (Appendix~\ref{app:prompts}).
+The current prime-power theorem extends the qubit construction through
+further researcher-led generalization and proof.
+
+\subsection{Independent verification and nonexistence checking}\label{sec:refute}
+
+The Magma export supplies only a basis of the symplectic dual
+$L=S^\perp$, where $S$ is the stabilizer space. Magma independently
+recomputes the dual, radical and $(k,c,d)$ (Appendix~\ref{app:symplectic}).
+All 148 objects---115 core codes at $q=2,3,4,5$ and 33 family instances---were re-verified with zero mismatches under Magma V2.28-20.
+Separate $\F_2$ linear-algebra checks verify the two solver-refined
+qubit codes; all code records can also be checked in Python using the
+\artifactlink{}. Lean checks the algebraic certificate underlying
+Theorem~\ref{thm:unified}. A separate Comparator run checks the submitted
+proof against the exact formal goal and permitted axioms
+(Appendix~\ref{app:lean}).
+
+
+To test existence of an $[[n,k,d;c]]_q$ code, we encode the smaller
+subspace $L=S^\perp$ in symplectic normal form. Constraints enforce
+the target signature directly, so every satisfying assignment specifies
+an EAQECC. Distance constraints dominate the encoding.
+
+For an unsatisfiable encoding, the SAT solver produces a DRAT proof,
+a certificate of unsatisfiability checked independently by
+DRAT-trim~\citep{DRATtrim}. Together with the encoding's completeness,
+this establishes the corresponding code nonexistence result. The qutrit encoding uses a coordinate-normalization
+lemma to preserve completeness. Appendix~\ref{app:sat} gives the proof
+scope and encoding, and Section~\ref{sec:optimality-results} reports the
+certified results.
+
+\subsection{Reproducibility}\label{sec:repro}
+
+Readers can reconstruct two outputs: code constructions and preserved
+program executions. Supplied matrices support exact $(k,c,d)$ checks;
+family implementations generate instances, and Theorem~\ref{thm:unified}
+proves the construction for all admissible parameters. Task specifications
+and discovery logs document the progression from finite qubit codes to
+the researcher-derived family (Appendix~\ref{app:campaign}). Source replay
+concerns retained programs, including later programs that use this family.
+It replaces wall time with a virtual clock tied to evaluator calls and
+preserves the recorded random-number seeds and stopping conditions.
+Three programs with four seeds each reproduce all twelve stored proposal
+lists, with agreement between one and four workers. The \artifactlink{}
+provides these inputs, independent parameter checks and reference-bound
+audits.
+
+\FloatBarrier
+%==============================================================
+\section{Results}\label{sec:results}
+%==============================================================
+
+Algorithm~\ref{alg:search} presents a later, high-scoring AlphaEvolve
+program whose seed already incorporated the discovered qubit family.
+It illustrates continued search after that generalization.
+Figure~\ref{fig:lineage} and the shading show changes to target selection,
+reuse of stored proposals, construction choices and generator-row
+mutations. The earlier discoveries that motivated the theorem are
+recorded separately (Appendix~\ref{app:campaign}). Section~\ref{sec:ablation}
+evaluates iterative feedback using newly generated programs, including
+Algorithm~\ref{alg:ablation-search} in Appendix~\ref{app:hitl-program}.
+
+\input{alg_search}
+\input{fig_program}
+
+\subsection{Distance improvements}\label{sec:distance-results}
+
+For listed cells, the tables give the July 2026 distance interval within
+the previous code parameters and our verified distance in Ours $d$
+(2026). Bold entries attain the applicable archived, EA-Plotkin or
+certified upper bound (Section~\ref{sec:optimality-results}). References
+identify previous lower-bound constructions and their dates. For
+$q=4,5$, where no comparable dated entry is archived, full constructed
+parameters appear in a separate \emph{New constructions} block.
+No historical interval is assigned where no comparison entry exists.
+
+\input{tab_results}
+
+The five Table~\ref{tab:results} rows with $k=1$ and $c=n-3$ are
+covered by Theorem~\ref{thm:unified}; the other four retained generator
+matrices were constructed by normal-form SAT. The daggered $n=13,15$
+rows also have constructions from the evolved program at lengths withheld
+from training and selection (Section~\ref{sec:longer-codes}). These
+reconstructions are covered by the family theorem and are not counted
+again among its 54 gap closures.
+
+Our codes and the upper bounds close all nine listed qubit gaps in
+Table~\ref{tab:results}. Four cells improve the previous lower bound by
+two: $(n,k,c)=(10,1,6)$, $(12,1,8)$, $(12,2,9)$ and $(13,1,8)$.
+For the last two cells, the EA-Plotkin bound and a checked DRAT refutation,
+respectively, give final distance intervals $[9,9]$ and $[11,11]$
+(Section~\ref{sec:optimality-results}). Table~\ref{tab:results-qudit}
+shows four qutrit gap closures, including $[[13,1,12;8]]_3$, which raises
+the listed distance from 10 to 12 at fixed length and entanglement.
+
+The previous $[[7,1,5;4]]_2$ construction follows from the pure
+$[[11,1,5]]_2$ code of \citet{CRSS1997} and the length-reduction rule of
+\citet{GHW2020}; we date this EAQECC construction by the 2020 rule.
+The other eight qubit baselines and the four displayed qutrit baselines
+follow from the 2022 version of \citet{Luo2022}. Appendix~\ref{app:bound-history}
+records the source codes and propagation rules for each cell.
+
+The 65 core qubit code records cover 61 distinct $(n,k,c)$ cells: eight listed
+and 53 absent cells. The 27 qutrit codes comprise 15 improvements
+to listed entries, 11 constructions at absent cells and one code whose
+distance is already listed. Multiple codes at one cell are not
+counted as separate table entries. Four of these listed core cells overlap the
+family results in Section~\ref{sec:family-results}. The additional
+$n=15$ code record is kept in the controlled-study archive, separately from
+these core-file counts.
+
+\subsection{Code families and reduced entanglement}\label{sec:family-results}
+
+Theorem~\ref{thm:unified} is the mathematical generalization of the
+construction identified through the evolved qubit codes. It gives
+$[[n,1,n-1;n-q-1]]_q$ for $q\ge3$, $n\ge2q+1$, and for $q=2$
+at odd $n\ge5$. The proof in Appendix~\ref{app:theorem} establishes
+the entire family; the implementations verify finite instances at
+$q=2,3,4,5$. Entanglement lifting increases $c$ by one at fixed $(n,k)$
+without reducing distance when $c<n-k$ (Lemma~\ref{app:lifting}).
+The qubit family closes 29 listed gaps. For $q=3$, lifting from $c=n-4$
+to the table's $c=n-3$ closes 25 more, for 54 in total.
+This family addresses finite-length distance--entanglement tradeoffs:
+at fixed $q$, its rate $k/n=1/n$ vanishes and $c/n$ tends to one.
+The broader archive includes 29 binary codes with $k>1$, up to $k=6$.
+
+Additional constructions attain $d=n-1$ at $c=n-q-2$.
+The displayed $q=4,5$ examples include $[[10,1,9;4]]_4$ and
+$[[12,1,11;5]]_5$, requiring four and five shared pairs, respectively.
+These constructions establish achievable
+entanglement costs; smaller costs at $q=4,5$ have not been excluded.
+Complementary finite-field annealing searches produce 13 archived codes
+at $q=4$ and 10 at $q=5$ (Appendix~\ref{app:nonbinary-search}).
+Table~\ref{tab:results-qudit} selects those using the least entanglement
+reached at the displayed lengths.
+
+\input{fig_boundmap}
+
+Figure~\ref{fig:map} concerns linear stabilizer EAQECCs with $k=1$
+and target distance $n-1$. Teal at $(q,n,c)$ denotes a construction
+with distance at least $n-1$. The white tick, solid fill and
+pale fill distinguish $c=n-q-1$, smaller $c$ and larger $c$, respectively;
+these are positions relative to the family line, not claims of minimum
+entanglement. Pale cells correspond to explicit constructions or entanglement
+lifting. Red cells are excluded by released, checked certificates or
+by their implications at smaller $c$ through entanglement lifting. A dotted
+outline records an unsuccessful search, not nonexistence. Unmarked gray
+cells assert neither construction nor exclusion. The dashed $c=n-3$
+line is obtained by substituting $k=1$ and $d=n-1$ into the historical
+Brun--Devetak--Hsieh expression $2(d-1)\le n-k+c$ at equality.
+It is a comparison line, not a general bound in this regime
+(Appendix~\ref{app:tables}).
+
+\subsection{Upper bounds and optimality}\label{sec:optimality-results}
+
+Solver refinement settles the two remaining qubit gaps from
+Table~\ref{tab:results}. Normal-form SAT finds $[[12,2,9;9]]_2$,
+improving upon an intermediate $d=8$ construction from our earlier search. EA-Plotkin gives
+$d\le\lfloor144/15\rfloor=9$, so the new code is distance-optimal.
+At $(n,k,c)=(13,1,8)$, a DRAT-certified refutation excludes $d\ge12$;
+our existing $d=11$ code is therefore optimal. Both codes are
+checked by separate binary linear-algebra code, and DRAT-trim replays
+the nonexistence certificate. We attribute these two closures to solver refinement.
+
+Matching nonexistence results also establish minimum entanglement at
+selected lengths. For qubits at $k=1$, $d=n-1$, the minimum is $n-3$
+at $n=7,9,11$ and $n-4$ at $n=6,8,10$. This finite-length parity
+pattern combines distinct constructions with certified exclusions;
+Theorem~\ref{thm:unified}'s binary branch covers odd lengths.
+For qutrits, the certified
+exclusion of $[[10,1,9;4]]_3$ and a code at $c=5$ give
+$\cmins(10,1,9)=5$. Two further exclusions, $[[5,2,4;3]]_2$ and $[[6,2,5;4]]_2$,
+were also checked by exhaustive enumeration. All ten exclusions have
+checked DRAT proofs (Appendix~\ref{app:sat-resources}).
+
+Applying the EA-Plotkin bound of \citet{GuoLi2013} additionally lowers
+398 listed qubit upper bounds. The auditor recomputes these corrections
+against the reference table data. These corrections follow from a known
+inequality and are reported as a separate source of upper bounds.
+
+
+\FloatBarrier
+%==============================================================
+\section{Ablation Study}\label{sec:ablation}
+%==============================================================
+
+We test whether iterative feedback helps develop a researcher-proposed
+change into an effective search program. Both policies receive the same
+initial code and research guidance; their difference is how they reuse
+previous programs and execution feedback.
+
+\subsection{Program generation}
+The shared proposal is to maintain and mutate a basis of
+$L=S^\perp$, converting it to $S$ for exact evaluation. For
+$[[9,1,8;6]]_2$ and $[[11,1,10;8]]_2$, this replaces a basis of 14 or
+18 generators with four vectors. Symplectic complementation preserves
+the feasible code set but changes the variables and local mutations.
+A preliminary calibration compares the initial $S$-side program with
+a working $L$-side control and fixes a budget at which the change can
+produce measurable success. Neither the control's source nor generator
+matrices are supplied to the model.
+
+\emph{Independent proposals} always receive the initial program and its
+fixed training measurements. \emph{Iterative evolution} receives the
+best-so-far program and the most recent attempt, including rejected
+attempts, with training feedback for both. The model can revise the
+representation, objective, mutation operators and restart policy.
+A proposal is a whole program revision; an evaluator call checks one
+candidate matrix produced by that program. Both use Gemini 3.5 Flash
+and identical tool access. There is no
+controller initialization: every success must be produced by the
+submitted program.
+
+An initial four-block study was followed by a prospective eight-block
+replication using new generation and execution seeds. Each policy is
+allocated seven proposals per block. The replication receives 111 of
+112 planned responses; one iterative pool has six proposals. All eight
+blocks are retained under a rule fixed before validation and testing.
+Training uses two seeds and 10,000 exact evaluations per target. Four
+new validation seeds select among the three training-best distinct
+programs; 32 further seeds evaluate each selection. Only training
+feedback enters generation. The original and new cohorts are reported
+separately (Appendix~\ref{app:ablations}).
+
+\input{fig_ablation_comparison}
+
+In the new cohort, success at $n=9,11$ is 72.7\% and 43.4\% for
+iterative evolution, versus 60.2\% and 27.0\% for independent proposals.
+The prespecified primary endpoint is the paired block difference in
+mean normalized success-curve area: 0.359 versus 0.260, a gain of 0.099.
+Five of eight block differences are positive; a descriptive two-sided
+sign-flip test gives $p=0.328$. Generation blocks, rather than execution
+seeds, are the units for policy inference. Restricting to the seven
+fully received paired blocks gives a gain of 0.150.
+
+Figure~\ref{fig:ablation-comparison} aggregates both lengths within each
+panel. Each policy contributes eight selected programs and 32 runs per
+length; each fixed control contributes 32 runs per length. Across the
+two generation lengths, iterative selections solve 297/512 executions,
+versus 223/512 for independent selections. Every saved successful code
+passes an independent parameter check. Appendix~\ref{app:hitl-outcomes}
+reports the earlier cohort and its fresh-seed repeat separately; the
+artifact also preserves model-use accounting for both policies.
+
+\subsection{Generalization to longer codes}\label{sec:longer-codes}
+The selected programs are applied without further modification to
+$[[13,1,12;10]]_2$ and $[[15,1,14;12]]_2$ at 30,000 calls.
+These lengths are withheld from generation and selection; their outcomes
+are secondary endpoints. In the new eight-block cohort, iterative
+success is 118/256 (46.1\%) and 81/256 (31.6\%), versus 50/256
+(19.5\%) and 8/256 (3.1\%) for independent proposals. Two iterative
+selections achieve 32/32 at $n=13$ and at least 28/32 at $n=15$
+(Appendix~\ref{app:replication}).
+Their mean normalized curve areas are 0.309 and 0.193, compared with
+0.099 and 0.012 for independent proposals.
+
+A preserved lineage from the original cohort gives a source-level
+diagnosis of one useful edit. Adding a penalty for distance below the
+target---the only functional search change in that step---raises
+$n=13$ success from 13/32 to 29/32 and $n=15$ success from 3/32 to
+28/32. The validation-selected child (Algorithm~\ref{alg:ablation-search})
+then bundles changes to objective weights, moves and restart behavior;
+we therefore use the earlier step for edit-level attribution and report
+the complete lineage in Appendix~\ref{app:hitl-program}. All resulting
+codes pass independent linear-algebra checks. Table~\ref{tab:results}
+includes the longer-code parameters alongside their prior intervals.
+
+\FloatBarrier
+%==============================================================
+\section{Limitations and conclusion}\label{sec:limitations}
+%==============================================================
+
+The controlled evidence is scoped to one model, one researcher proposal
+and binary targets. The eight generation blocks are the independent
+units for policy inference; repeated executions measure frozen-program
+variability. The policies receive equal proposal allocations but use
+different token totals. Exact distance verification
+enumerates symplectic duals, so its cost grows exponentially with their
+dimension. The distance guarantees assume ideal decoding and noiseless
+receiver-side halves; circuit costs and hardware-level error rates
+are not evaluated. For these controlled studies, the artifact preserves
+all generated sources, requests and selection records and supports fixed-program replay;
+stochastic model sampling is documented rather than expected to return
+byte-identical programs.
+
+The central mathematical result developed from code constructions
+produced by evolved programs. Researchers analyzed their structure,
+derived a qubit family, and extended and proved the prime-power
+construction of Theorem~\ref{thm:unified}. Later prompts reused the
+qubit family, showing how a result obtained through program search can
+guide further research. The family and entanglement lifting close 54
+listed gaps. Normal-form SAT completes two final qubit closures, ten
+checked DRAT refutations certify selected upper bounds and minimum
+entanglement costs, and EA-Plotkin tightens 398 listed upper bounds.
+
+Supplied matrices, family implementations and independent verifiers
+support reconstruction and checks of finite instances; preserved programs
+support seeded replay. The proof covers every admissible parameter.
+Independent Magma verification reports zero mismatches across 148
+objects, and Lean checks the algebraic certificate underlying the
+researcher-derived theorem. The prospective eight-block cohort identifies
+useful program revisions and higher held-out longer-code success among
+iterative selections under shared research guidance. Applying the
+workflow to another problem still requires its own representation,
+evaluator and mathematical analysis.
+
+\input{statements}
+
+\clearpage
+\bibliographystyle{iclr2027_conference}
+\bibliography{refs}
+
+\appendix
+% Keep appendix spacing natural when a large display moves to the next page.
+\raggedbottom
+\section{The domain, the tables, and the targets}\label{app:domain}
+
+\subsection{Codes as subspaces of $\F_q^{2n}$}\label{app:symplectic}
+For prime-power $q$, our search uses $\F_q$-linear stabilizer EAQECCs.
+Stabilizer generators are products of Pauli operators defining
+error-detection constraints. Entanglement assistance permits noncommuting
+generators on the transmitted qudits by completing them with operators
+on the receiver's halves into commuting constraints. Their commutation
+relations determine the entanglement cost~\citep{BrunDevetakHsieh2006,WildeBrun2008}.
+Nonadditive EAQECCs form a different search space~\citep{Shin2011}.
+
+We write vectors in bold, scalar coordinates and coefficients in italic,
+and subspaces with italic capitals such as $S,L,R$.
+Modulo phase, a Pauli operator is represented by
+$\vct{u}=(x_1,z_1,\ldots,x_n,z_n)\in\F_q^{2n}$. For qubits, the pairs
+$(0,0)$, $(1,0)$, $(0,1)$ and $(1,1)$ represent $I,X,Z,Y$, respectively. The
+symplectic product with $\vct{v}=(x'_1,z'_1,\ldots,x'_n,z'_n)$ is
+\[
+ \langle \vct{u},\vct{v}\rangle=\sum_i(x_i z_i'-z_i x_i'),
+\]
+and the symplectic weight $\wt(\vct{u})$ counts positions with
+$(x_i,z_i)\ne(0,0)$. For qubits, zero symplectic product means that
+the Pauli operators commute.
+
+Let $S$ be the generator span and set $s=\dim S$. Its symplectic dual
+$S^\perp$ consists of vectors orthogonal to $S$.
+For any subspace $U\le\F_q^{2n}$, define its radical by
+$\operatorname{rad}(U):=U\cap U^\perp$. Thus
+$S_{\mathrm{iso}}=\operatorname{rad}(S)$ contains stabilizer
+operations with trivial logical action. Vectors in
+$S^\perp\setminus S_{\mathrm{iso}}$ represent undetectable errors
+with nontrivial logical action. The code parameters are
+\[
+  c=\frac{s-\dim S_{\mathrm{iso}}}{2},\qquad
+  k = n - s + c, \qquad
+  d = \min\{\wt(\vct{v}) : \vct{v} \in S^{\perp}\setminus S_{\mathrm{iso}}\}.
+\]
+Finite-field linear algebra gives the dual and radical. With
+$r=\dim L=n+k-c$, the dual has $q^r$ vectors, of which
+$q^r-q^{n-k-c}$ are non-radical; their minimum weight gives $d$.
+For Theorem~\ref{thm:unified}, $r=q+2$ is independent of length at fixed $q$.
+At every binary ablation length, $r=4$: 16 dual vectors and 12
+non-radical vectors. The controlled evaluator computes the radical
+from the Gram kernel, avoiding enumeration of $S$. The archived
+discovery helper instead enumerates both $S$ and $L$, totaling
+$2^s+2^r$ vectors before filtering. Thus implementation and subspace
+dimensions determine cost, independently of the search representation.
+Parameters are recomputed from generators, not search-program reports.
+
+To propagate constructions and exclusions across entanglement costs,
+we use the following form of the standard rule in
+\citet[Section IV, rule (4)]{Luo2022}. We include its symplectic argument
+for completeness.
+
+\begin{lemma}\label{app:lifting}
+An $\F_q$-linear stabilizer EAQECC with parameters $[[n,k,d;c]]_q$,
+$k\ge1$ and $c<n-k$, gives an $\F_q$-linear stabilizer EAQECC with
+parameters $[[n,k,d';c+1]]_q$ and $d'\ge d$.
+\end{lemma}
+\begin{proof}[Sketch of proof]
+Set $L=S^\perp$ and $R=\operatorname{rad}(L)$, with $\dim R=j=n-k-c>0$.
+Choose $L=U\oplus R$. The form on $U$ is nondegenerate, since a
+vector of $U$ orthogonal to $U$ also lies in $R$, hence in $U\cap R=\{0\}$; hence $\dim U=2k$.
+For a codimension-one subspace $R'\le R$, put $L'=U\oplus R'$ and
+$S'=(L')^\perp$. Then $\operatorname{rad}(L')=R'$ and
+\[
+ L'\setminus R'\subseteq L\setminus R,
+ \qquad \dim S'=s+1,\qquad \dim R'=j-1.
+\]
+The inclusion gives $d'\ge d$, while the parameter formulas give
+$c'=((s+1)-(j-1))/2=c+1$ and $k'=n-(s+1)+c'=k$.
+The ambient space is unchanged, so the length remains $n$.
+\end{proof}
+Repeating the operation gives distance at least $d$ for every
+$c'\in\{c,\ldots,n-k\}$. Conversely, nonexistence at cost $c$ and
+distance at least $d$ excludes every smaller cost at the same $(n,k)$:
+any such code could be lifted to cost $c$. This justifies the upward
+construction propagation and downward exclusion propagation in
+Figure~\ref{fig:map}. For the qutrit family, one step reduces the radical
+dimension from three to two and raises $c=n-4$ to $n-3$. The 25 open
+reference cells have $n=12,\ldots,36$, all within Theorem~\ref{thm:unified}'s
+range; their listed upper bound $n-1$ makes each lifted lower bound exact.
+
+\subsection{The closed form, and why it works}\label{app:theorem}
+Early evolved constructions $[[9,1,8;6]]_2$ and $[[11,1,10;8]]_2$
+(Appendix~\ref{app:campaign}) motivated the odd-length qubit family
+recorded in later tasks. The construction below generalizes it to prime
+powers. Its algebraic properties have also been independently rechecked
+with the Lean kernel; Appendix~\ref{app:lean} gives the formal goal,
+proof and correspondence with this construction.
+
+Fix a prime power $q=p^e$, a length $n\ge 2q+1$, and an enumeration
+$u_1,\dots,u_q$ of $\F_q$. On qudits $1,\dots,2q$ take $q$ disjoint pairs
+and let $\vct{\rho}_i$ be $Z$-type on pair $i$ with $z$-values $(1,-1)$.
+Juxtaposition and powers denote concatenation of coordinate pairs;
+$(0,1)^0$ is empty, so the tail at $n=2q+1$ contains only $(0,\lambda)$. Put
+\[
+  \vct{a}=(1,0)^{n},\qquad
+  \vct{b}=(u_1,1)(u_1,z_2)\,\big|\cdots\big|\,(u_q,1)(u_q,z_2)\,\big|\,
+    (0,1)^{n-2q-1}(0,\lambda),
+\]
+with $z_2=1$ for odd $p$ and $z_2=0$ for $p=2$, and
+$L=\operatorname{span}\{\vct{a},\vct{b},\vct{\rho}_1,\dots,\vct{\rho}_q\}$.
+\begin{theorem}\label{thm:unified}
+Let $q$ be a prime power. For $q\ge3$ with $n\ge2q+1$, or $q=2$
+with odd $n\ge5$, one can choose $\lambda\in\F_q^{\times}$ so that
+$L$ is the normalizer side of an $[[n,1,n-1;n-q-1]]_q$ EAQECC.
+For $q\ge3$, its entanglement cost $c$ is $q-2$ shared pairs below
+the threshold in the BDH expression; for $q=2$, it meets that threshold.
+\end{theorem}
+\begin{proof}
+The two vectors $\vct{a},\vct{b}\in\F_q^{2n}$ and the $q$ radical
+candidates $\vct{\rho}_1,\ldots,\vct{\rho}_q$ are defined above.
+Write $R_0=\operatorname{span}\{\vct{\rho}_1,\ldots,\vct{\rho}_q\}$.
+Each $\vct{\rho}_i$ has two nonzero $Z$ components on a distinct
+pair of qudits, so these $q$ vectors are linearly independent.
+Moreover, $\vct{a}$ and $\vct{b}$ have equal $X$ components within
+each pair. Their symplectic products with $\vct{\rho}_i$ therefore
+vanish. The radical candidates are mutually orthogonal, since they
+are all $Z$-type.
+
+The symplectic product of the two vectors is the sum of the $Z$
+components of $\vct{b}$:
+\[
+ \delta:=\langle\vct{a},\vct{b}\rangle
+ =q(1+z_2)+(n-2q-1)\,1_{\F_q}+\lambda
+ =(n-1)\,1_{\F_q}+\lambda.
+\]
+Here integers are interpreted in $\F_q$, and $q\,1_{\F_q}=0$
+because its characteristic divides $q$. If $q\ge3$, at most one of
+the $q-1\ge2$ nonzero choices of $\lambda$ makes $\delta=0$;
+choose any other nonzero value. If $q=2$ and $n$ is odd, the only
+choice $\lambda=1$ gives $\delta=1$. For even binary $n$, it gives
+$\delta=0$: this particular construction loses its nondegenerate pair.
+Thus $\delta\ne0$ in every case covered by the theorem.
+
+To establish independence of the full generating set, suppose
+$\alpha\vct{a}+\beta\vct{b}+\sum_i t_i\vct{\rho}_i=\vct{0}$.
+Since $n\ge2q+1$, the final qudit is outside the support of every
+$\vct{\rho}_i$. Its two components are $(\alpha,\lambda\beta)$,
+so $\alpha=\beta=0$. Independence of the radical candidates then
+implies $t_i=0$ for every $i$. Consequently $\dim L=q+2$.
+The restriction of the symplectic form to $L$, in this basis, has
+one nondegenerate $2\times2$ block
+$\left(\begin{smallmatrix}0&\delta\\-\delta&0\end{smallmatrix}\right)$
+and a $q\times q$ zero block. Hence its rank is two and
+$\operatorname{rad}(L)=R_0$.
+
+Every vector outside this radical has the unique form
+\[
+ \vct{w}=\alpha\vct{a}+\beta\vct{b}
+       +\sum_{i=1}^q t_i\vct{\rho}_i,
+ \qquad (\alpha,\beta)\ne(0,0).
+\]
+All $n-2q$ tail qudits are nonzero: their components are
+$(\alpha,\beta)$, except for the final $(\alpha,\lambda\beta)$.
+On pair $i$, the two coordinate pairs are
+\[
+ (\alpha+\beta u_i,\,\beta+t_i),\qquad
+ (\alpha+\beta u_i,\,\beta z_2-t_i).
+\]
+If $\beta=0$, then $\alpha\ne0$ and all $n$ qudits are nonzero.
+If $\beta\ne0$, exactly one index $i$ satisfies
+$u_i=-\alpha/\beta$, since $u_1,\ldots,u_q$ enumerate all $q$ elements of the finite field $\F_q$,
+and $-\alpha/\beta\in\F_q$.
+Every other pair has two nonzero $X$ components. On the exceptional
+pair, both $Z$ components could vanish only if
+$t_i=-\beta=\beta z_2$. This is impossible because
+$1+z_2\ne0$: it equals $2$ in odd characteristic and $1$ in
+characteristic two. At most one qudit can therefore be zero, giving
+$\wt(\vct{w})\ge n-1$.
+
+This lower bound is attained. Fix any index $i$, choose
+$\beta=1$, $\alpha=-u_i$, $t_i=-1$, and $t_h=0$ for $h\ne i$.
+The first qudit of pair $i$ is zero and its second has nonzero
+$Z$ component $1+z_2$. All other pairs have nonzero $X$ components,
+and the tail remains nonzero. This vector lies outside $R_0$ and
+has weight exactly $n-1$.
+
+Finally, set $S=L^\perp$. Nondegeneracy of the ambient symplectic
+form gives $S^\perp=L$ and $\dim S=2n-q-2$. Also
+$S\cap S^\perp=L^\perp\cap L=R_0$, whose dimension is $q$.
+The parameter formulas in Appendix~\ref{app:symplectic} now give
+\[
+ c=\frac{2n-q-2-q}{2}=n-q-1,\qquad
+ k=n-(2n-q-2)+c=1,\qquad d=n-1.
+\]
+For these parameters,
+$2(d-1)-(n-k+c)=(2n-4)-(2n-q-2)=q-2$.
+Thus the BDH threshold exceeds $c$ by $q-2$ shared pairs for $q\ge3$
+and met with equality for $q=2$, as stated.
+\end{proof}
+The auditor instantiates this construction and verifies every member
+exactly for $q\in\{2,3,4,5\}$ and $2q+1\le n\le 2q+8$ (claim
+\claim{families}); the theorem covers every prime power.
+
+\subsection{Reference bounds and target selection}\label{app:tables}
+The reference tables record, for each parameter cell $(q,n,k,c)$,
+the listed lower and upper distance bounds and their construction sources.
+Our comparison uses the bounds accessed on 17 July 2026. The reference
+qubit table contains 563 entries whose distance bounds differ by one. The artifact
+preserves these table data and a second copy retrieved on 10 September
+2026; both cover qubit codes with $n\le64$ and qutrit codes with $n\le36$.
+The reproduction command uses the July reference data unless another
+retrieval date is explicitly selected. Schema checks reject malformed
+records before classifying improvements or previously unlisted cells.
+
+An entry with distance interval $[d_\ell,d_u]$ closes when construction
+and nonexistence bounds meet. For $(q,n,k,c)=(2,7,1,4)$, a verified
+$[[7,1,6;4]]_2$ code closes the listed $5\le d\le6$ gap.
+Cells absent from the reference tables are called \emph{record targets} in the
+archive; absence alone does not establish novelty relative to all
+published constructions.
+
+The familiar BDH Singleton expression $2(d-1)\le n-k+c$ is not a
+general bound in the large-distance regime~\citep{Grassl2021}. Our
+principal family has $d=n-1$, so we use the applicable generalized
+Singleton bounds of \citet{GHW2022}. The $[[12,1,11;5]]_5$ code,
+for example, uses four fewer pairs than substitution into the BDH
+expression would suggest; it does not contradict a valid upper bound.
+
+For qubit ($q=2$) linear stabilizer EAQECCs with $k\ge1$, the
+EA-Plotkin bound~\citep{GuoLi2013} gives
+$d\le\lfloor3\cdot4^{k-1}n/(4^k-1)\rfloor$.
+It lowers 398 upper bounds in the reference \emph{qubit} table.
+The qubit target list retains cells not excluded by this inequality,
+the applicable Singleton bounds, or our certified refutations.
+
+\subsection{Sources and dates of previous bounds}\label{app:bound-history}
+The dates in Tables~\ref{tab:results} and~\ref{tab:results-qudit} refer to
+verified versions of public
+sources, not necessarily to the first discovery of each EAQECC parameter
+set. The reference qubit table fixes which lower and upper bounds we compare
+against. For $(7,1,4)$, the underlying pure $[[11,1,5]]_2$ code is
+recorded by \citet{CRSS1997}; applying Theorem~7 of \citet{GHW2020}
+with $\ell=4$ establishes the EAQECC lower bound by 15 October 2020.
+The elapsed time to 17 July 2026 is 5.8 years when rounded to one decimal.
+
+The other eight qubit rows use the July 12, 2022 version of \citet{Luo2022}.
+For odd $n\in\{9,11,13,15\}$, Table~I contains
+$[[n-1,0,n-1;n-3]]_2$. Quantum shortening gives
+$[[n-2,1,n-2;n-3]]_2$, and two length extensions yield the previous
+$[[n,1,n-2;n-3]]_2$ bound. The two even-length rows arise similarly:
+\[
+\begin{aligned}
+ [[8,0,8;6]]_2 &\longrightarrow [[7,1,7;6]]_2
+                  \longrightarrow [[10,1,7;6]]_2,\\
+ [[10,0,10;8]]_2 &\longrightarrow [[9,1,9;8]]_2
+                  \longrightarrow [[12,1,9;8]]_2.
+\end{aligned}
+\]
+A fourth length extension of $[[9,1,9;8]]_2$ also gives the previous
+$[[13,1,9;8]]_2$ bound. For the $k=2$ row, the source's
+$[[17,0,12;9]]_2$ code gives
+\[
+ [[17,0,12;9]]_2 \longrightarrow [[13,4,8;9]]_2
+ \longrightarrow [[13,2,8;9]]_2 \longrightarrow [[12,2,7;9]]_2
+\]
+by four quantum shortenings, taking a subcode, and puncturing.
+The rules and source codes are both present in the 2022 version,
+giving 4.0 years between publication and our table access date. These derivations match
+the provenance strings in the archived EAQECC table. They establish that
+the baselines were available by the stated dates and still listed in
+2026; they do not establish a complete chronology of intervening work.
+
+For the displayed qutrit rows, Table~II of the same 2022 source
+contains $[[10,0,8;4]]_3$, $[[10,0,9;6]]_3$, and
+$[[13,1,10;8]]_3$. Quantum shortening of $[[10,0,8;4]]_3$ gives $[[9,1,7;4]]_3$.
+Separately, increasing the dimension of the same $[[10,0,8;4]]_3$
+source code using one additional shared pair gives $[[10,1,8;5]]_3$
+\citep[Section IV, rule (6)]{Luo2022}. Applying this dimension-increase rule to
+$[[10,0,9;6]]_3$ and then extending its length yields
+$[[11,1,9;7]]_3$. The fourth baseline is the listed
+$[[13,1,10;8]]_3$ code itself. The $q=4,5$ rows have no prior entry in
+the archived tables and are not included in these historical comparisons.
+
+\section{The discovery pipeline in detail}\label{app:pipeline-detail}
+
+\subsection{Campaign configuration and verification}\label{app:campaign}
+Across the four discovery campaigns, Google Cloud Vertex AI's
+AlphaEvolve service sampled
+\texttt{gemini-3.5-flash} and \texttt{gemini-3.1-pro-preview} equally,
+with four generation and four evaluation workers. The four campaigns
+requested $120$, $120$, $80$ and $80$ programs; worker logs record
+$120$, $121$, $80$ and $80$ completed searches (401 total). Service
+counters are $121$, $122$, $81$ and $81$, each including an initial
+program with a supplied score. Completed searches determine the nominal
+allowance: $401\times240$\,s, or $26.73$\,h. Archived records report
+$1.87$\,M input and $3.74$\,M output tokens. Campaigns 1--2 share one
+task specification and campaigns 3--4 another (Appendix~\ref{app:prompts}).
+
+Campaign 1 records 120 completed searches. The first new
+$[[9,1,8;6]]_2$ and $[[11,1,10;8]]_2$ codes precede completions 4
+and 119, respectively: 0.267\,h and 7.933\,h of allocated
+search budget at 240\,s per completed search. The logs do not provide
+elapsed discovery times. A later task records $[[7,1,6;4]]_2$ as an
+earlier construction without a first-hit budget. The $[[13,1,12;10]]_2$
+record instead cites the closed-form theorem as its source.
+Initial and later tasks document the transition from finite constructions
+to the researcher-derived family. Algorithm~\ref{alg:search} is a later
+retained program; the logs do not identify a surviving source for every
+early discovery. Section~\ref{sec:ablation} uses separately generated,
+preserved programs and its own protocol.
+
+For the complementary finite-field searches at $q=4,5$,
+simulated annealing searches\label{app:nonbinary-search}
+$L=\operatorname{span}\{\vct\rho_1,\ldots,\vct\rho_j,\vct a,\vct b\}$
+with $j=n-1-c$ fixed, disjoint $Z$-pair rows, each with entries $(1,1)$.
+Moves resample up to three entries of $\vct a$ or $\vct b$.
+The objective counts non-radical span vectors below distance $n-1$ by
+exact enumeration and Gram tests. Full-rank and
+$\langle\vct a,\vct b\rangle_s\ne0$ checks prune proposals; Metropolis acceptance, cooling and restarts guide search.
+Before saving, a separate parameter calculation checks $(k,c,d)=(1,c,n-1)$.
+All 23 archived matrices have this form and pass the independent Magma
+check. The \artifactlink{} supplies the routines and code-to-record mappings.
+
+The independent Magma check receives generators only and re-derives every quantity we
+report. Symplectic weight is obtained by embedding
+$(x_i,z_i)\mapsto x_i+\omega z_i$ into $\mathrm{GF}(q^2)$, choosing
+$\omega\notin\F_q$. Then $\{1,\omega\}$ is an $\F_q$-basis, so the image
+is zero exactly when $(x_i,z_i)=(0,0)$. Magma's own \texttt{Weight()}
+therefore counts nonzero coordinate pairs from the supplied generators.
+
+Algorithm~\ref{alg:search} summarizes the archived evolved construction
+program; its preserved source is available in the
+\artifactlink{}.\label{app:construction-program}
+The generator matrix $\mathbf{G}$ spans $S$, and $best[t]$ stores the
+lowest-cost proposal seen for target $t$. The objective remains
+$5000|r.c-c_t|+1000|r.k-k_t|+r.\mathrm{offending}$, with cost $10^9$
+for an evaluator error. Here $r.\mathrm{offending}$ counts
+$\vct v\in S^\perp\setminus S_{\mathrm{iso}}$ with $\wt(\vct v)<d_t$;
+it is an integer count. After return, the external evaluator instead
+maximizes $1000-\mathrm{offending}$ for matching $(k,c)$, adding $10^6$
+for a newly achieved archive target. A signature mismatch scores
+$-5000|r.c-c_t|-1000$; the best proposal sets the program score.
+Both calls use the exact parameter routine; Magma supplies the separate
+implementation check.
+The campaign seed used fixed target weights
+$n_t^{-2}$. The evolved program uses normalized weights proportional to
+$n_t^{-1.5}(1+10b_t)$, initially with $b_t=0$. After a repair attempt,
+\textsc{ProgressBonus} uses the stored best cost $o_t^\star$:
+\[
+ b_t\gets
+ \begin{cases}
+  (1+o_t^\star)^{-1},&0<o_t^\star<100,\\
+  0,&o_t^\star=0,\\
+  b_t,&\text{otherwise}.
+ \end{cases}
+\]
+If no proposal was recorded, take $o_t^\star=10^9$. A proposal with
+zero cost at its initial evaluation takes the earlier \textbf{continue}
+branch and skips this bonus update, exactly as in the source.
+
+For a new attempt, the program samples one scalar $u$ and tests branches
+in order. If $u<0.2$ and a stored positive-cost proposal exists, it resumes
+from that matrix. Otherwise, \textsc{Construct} uses a cyclic construction
+when $u<0.4$ and $s\le2n$, a divisor-stride construction when $u<0.6$
+and $s\le2n$, or a block construction when $u<0.8$. If none applies,
+or the resulting rank is not $s$, it uses a random stabilizer.
+The construction branches and their validity checks remain subject to the
+same exact evaluator as the seed.
+
+The cyclic branches use one or two nonzero base vectors. Row $i$ takes
+base $i\bmod m$ and rotates it by
+$2h\lfloor i/m\rfloor\bmod 2n$ bits, where $m$ is the number of bases.
+The ordinary cyclic branch sets $h=1$; the added branch samples a positive
+proper divisor of $n$. The block branch extends the allowed dual dimension
+from 8 to 12 and block sizes from $\{2,4,6\}$ to $\{2,4,6,8\}$.
+
+During repair, \textsc{MixedMove} samples $v\in[0,1)$: if $v<0.2$
+and $s\ge2$, XOR two distinct rows; otherwise, if $v<0.4$, rotate one
+row by $1,\ldots,n-1$ qubits uniformly; otherwise, apply a weight-1--3
+Pauli perturbation to one row. The rotation changes one generator,
+not all coordinates of the code. Rank-deficient proposals increment $f$
+without evaluation. The inherited Metropolis loop cools by $0.995$ to
+$0.1$ and restarts after 1,500 attempts without an accepted strict
+improvement. It retains each target's best accepted proposal and returns
+at most 16. Figure~\ref{fig:lineage} shows source changes, not their
+individual performance effects.
+
+\subsection{The refutation encoding}\label{app:sat}
+Encode $L=S^\perp$ using $j=n-k-c$ radical generators
+$\vct\rho_1,\ldots,\vct\rho_j$ and $k$ hyperbolic pairs
+$(\vct u_i,\vct v_i)$. Gram constraints enforce rank $2k$ and pair
+independence. For qubits, all $2^{2k+j}-2^j$ non-radical combinations
+must have weight at least $d$. Gray-code chaining changes one generator
+contribution at a time; Sinz counters enforce weight. When $j\ge1$,
+local symplectic maps and coordinate permutations make $\vct\rho_1$
+a nonzero $Z$-prefix. For its bits $(x_i,z_i)$, the CNF sets
+$x_i=0$, $z_1=1$ and adds $(z_i\lor\neg z_{i+1})$ for $i<n$.
+These clauses allow every nonempty prefix in one CNF, without fixing its
+weight or making the other radical rows $Z$-only.
+
+For qutrits, each field element is one-hot encoded. The radical basis is
+in reduced row echelon form, and modular state chains impose its
+Gram constraints. For $k=1$, it suffices to test the four projective
+logical representatives $\vct{u},\vct{v},\vct{u}+\vct{v},\vct{u}+2\vct{v}$, each shifted by every radical
+vector. Their nonzero scalar multiples have the same weights. At
+$d=n-1$, pairwise clauses prevent a representative from vanishing at two
+coordinates. The following lemma permits an additional normalization.
+
+\begin{lemma}[Coordinate normalization]\label{lem:coordinate-normalization}
+Let $L\le\F_q^{2n}$ have radical $R$ with $\dim L=\dim R+2$ and
+$\dim R>2$. If every vector in $L\setminus R$ has symplectic weight at
+least $n-1$, then local symplectic transformations can make $R$ entirely
+$Z$-type.
+\end{lemma}
+\begin{proof}[Sketch of proof]
+By definition, $R=\operatorname{rad}(L)=L\cap L^\perp$.
+Let $\pi_i:\F_q^{2n}\to\F_q^2$ be $\pi_i(\vct v)=(x_i,z_i)$,
+and $\pi_{ih}=(\pi_i,\pi_h):\F_q^{2n}\to\F_q^4$ for $i\ne h$.
+Writing $K_{ih}=\ker(\pi_{ih}|_L)$, the distance hypothesis gives
+\[
+ K_{ih}\subseteq\{\vct v\in L:\wt(\vct v)\le n-2\}\subseteq R,
+ \qquad K_{ih}=\ker(\pi_{ih}|_R).
+\]
+Rank--nullity therefore yields
+\[
+ \dim\pi_{ih}(L)-\dim\pi_{ih}(R)=\dim L-\dim R=2,
+ \qquad \dim\pi_{ih}(R)\le2.
+\]
+Suppose $\dim\pi_i(R)=2$. For every $h\ne i$,
+$2=\dim\pi_i(R)\le\dim\pi_{ih}(R)\le2$. Hence the inclusion
+$\ker(\pi_{ih}|_R)\subseteq\ker(\pi_i|_R)$ is an equality, since
+both kernels have dimension $\dim R-2$. Consequently
+\[
+ \ker(\pi_i|_R)=\bigcap_{h\ne i}\ker(\pi_{ih}|_R)=\{\vct0\},
+\]
+which implies $\dim R=\dim\pi_i(R)=2$, a contradiction.
+Thus $\dim P_i\le1$ for every $P_i:=\pi_i(R)$.
+
+If $P_i=\{\vct0\}$, take $M_i=I_2$. Otherwise write
+$P_i=\operatorname{span}\{\vct w_i\}$ with
+$\vct w_i=(a_i,b_i)^{\mathsf T}\ne\vct0$, and set
+\[
+ M_i=
+ \begin{cases}
+  \begin{pmatrix}b_i&-a_i\\a_i^{-1}&0\end{pmatrix},&a_i\ne0,\\[3pt]
+  \begin{pmatrix}b_i&0\\0&b_i^{-1}\end{pmatrix},&a_i=0.
+ \end{cases}
+\]
+In both cases $\det M_i=1$ and $M_i\vct w_i=(0,1)^{\mathsf T}$.
+For $J=\left(\begin{smallmatrix}0&1\\-1&0\end{smallmatrix}\right)$,
+$M_i^{\mathsf T}JM_i=J$. Therefore
+$T=\operatorname{diag}(M_1,\ldots,M_n)$ is symplectic and
+\[
+ T(R)\subseteq\{(0,z_1,\ldots,0,z_n):z_i\in\F_q\},
+ \qquad \wt(T\vct v)=\wt(\vct v)\quad(\vct v\in\F_q^{2n}).
+\]
+The weight identity follows because every $M_i$ is invertible.
+Thus $T$ gives the required local normalization.
+\end{proof}
+
+The lemma also applies to binary targets with $k=1$, $d\ge n-1$
+and $j>2$. Adding all radical-$X$ zero constraints to the seven
+binary exclusions gives seven further UNSAT instances with checked
+DRAT proofs. A feasible $[[6,1,5;2]]_2$ control remains SAT and its
+decoded generators pass independent parameter checks. The artifact
+preserves these normalized certificates alongside the original ones.
+
+For $[[10,1,9;4]]_3$, $j=5$. Row reduction preserves the zero
+$X$ components, so the normalized encoding retains every possible code.
+Adding $jn=50$ unit clauses gives $33{,}033$ variables and $476{,}271$ clauses.
+The lemma establishes completeness; DRAT certifies unsatisfiability.
+As a positive control, the same normalized encoder is SAT when fixed to
+the archived $[[10,1,9;5]]_3$ code. The \artifactlink{} supplies the CNF,
+proof, normalization metadata and checks of the added clauses.
+
+\input{tab_refutation_resources}
+
+\begingroup
+\raggedbottom
+\subsection{Researcher proposals and task specifications}\label{app:prompts}
+\input{task_specs}
+\endgroup
+
+\section{Research-guided ablation details}\label{app:ablations}
+\input{app_hitl_ablation}
+\FloatBarrier
+
+\clearpage
+\section{Lean verification of Theorem 1}\label{app:lean}
+\input{app_lean}
+
+\end{document}

@@ -1,0 +1,127 @@
+# Current Figure 4
+
+Figure 4 now shows the prospective eight-block replication: panel (a) aggregates
+n=9,11 at 10,000 evaluations, and panel (b) aggregates n=13,15 at 30,000.
+Each policy has 512 executions per panel; each unchanged control has 64.
+The controls use matching execution seeds and were replayed after the new policy
+outcomes were available, without tuning. No error band treats execution seeds
+as additional generation blocks; the paired block table reports variability.
+
+Rebuild with `python scripts/eaqecc_ablation/make_replication_figure.py`.
+The manuscript uses `hitl_replication_content.tex`; PNG/PDF/SVG companions have
+the same stem. Figure 5 still reports the older frozen-program repeat.
+The following notes retain the generation instructions for historical figures.
+
+# Current paper figures
+
+Figure 4 contains four success curves at each of n=9 and n=11:
+initial program, classical L-side control, independent proposals and iterative evolution. The initial
+program has eight executions per target; each policy has 32 (four selected
+programs on eight seeds). Endpoints retain those denominators. The n=13,15
+transfer outcomes remain in the main text and appendix, not in Figure 4.
+
+Both Figures 1 and 4 use the same LaTeX Times family as Figure 2. Figure 4 is
+data-derived TikZ loaded directly into the manuscript; it no longer uses a
+Matplotlib fallback font. Figure 1 explicitly uses the roman family, preserving
+its existing sizes and logo artwork.
+
+Run `python3 scripts/eaqecc_ablation/make_figure.py` from the repository root.
+It needs Tectonic and Poppler to export standalone PDF, SVG and PNG alongside
+`hitl_ablation_content.tex`. The main manuscript inputs the generated TikZ.
+Run `python3 scripts/make_pipeline_overview.py --out-dir paper/manuscript/paper`
+to regenerate Figure 1 with the same family. Raw study data are unchanged.
+
+Figure 1 is placed immediately after the pipeline introduction (around review
+line 124), using an in-place float. Figure 3 has an independently typeset,
+footnote-size legend so enlarging the text does not shrink the panels. Its three
+construction markers are defined by c relative to n-q-1, not by optimality or
+exclusive provenance. Checked exclusions, unsuccessful searches, the historical
+reference line and unmarked cells are defined separately. The target is distance
+at least n-1. The plotted cell and axis commands are unchanged.
+
+To regenerate the Figure 3 data and source against the paper's frozen snapshot:
+
+```bash
+python3 scripts/build_bound_map.py --out ../checks/bound_map.json
+python3 scripts/make_bound_map_figure.py --data ../checks/bound_map.json --out-dir ../checks/figure3
+```
+
+The output is `fig_boundmap_column.tex`. Pass the positional argument `latest` to
+`build_bound_map.py` only for an explicitly updated comparison, not paper replay.
+Figure 2 compares the campaign seed with rank05 in `fig_program.tex`;
+Algorithm 2 and the controlled comparison describe a separate preserved program.
+
+## Figures embedded in the README
+
+The README uses PNG previews of the paper figures, with PDF/SVG companions
+under `paper/manuscript/figures/`. Figures 1 and 4 use their existing generators.
+Run `python3 scripts/make_readme_figures.py` to export Figures 2 and 3 from the
+current manuscript TeX. These exports omit the paper captions and replace the
+external appendix reference with “archived prompts”; plotted content and the
+complete Figure 3 legend are preserved. No experimental results are regenerated.
+
+Figure 2 is in Section 4 beside Algorithm 1, with a seed-versus-rank05 comparison of three program changes. Algorithm 2 remains the supplementary dual-space program in Appendix C.4.
+
+The Figure 2 exports are named `program_evolution.pdf/png/svg`. Its Pauli rows
+are illustrative operator patterns, not additional experimental constructions.
+The diagram has no empirical height or color scale.
+
+## Appendix B.3 task specifications
+
+The task summaries are typeset as native, selectable text with the paper's Times
+font and pale teal researcher-input rows. They are not figure floats. Regenerate
+the TeX blocks and matching SVG/PDF/PNG views with:
+
+```bash
+python3 scripts/make_task_spec_panels.py
+```
+
+The vector exports are in `paper/manuscript/task_specs/`. Their content is explicitly
+labeled as structured summaries; the original task files are unchanged. The
+former reproduction appendix has been removed; the controlled-study appendix is
+now Appendix C, and Algorithm 2 is in C.4.
+
+## Appendix page layout
+
+Appendix pages use natural vertical spacing. The controlled-study outcomes start
+with Table 3 on a new page; Algorithm 2 can move to the following page top while
+its definitions and verification text use the remaining space. B.3 remains one
+page of native text. No figure or algorithm is rasterized or reduced in font size.
+
+## Figure 1: formal-checking extension
+
+The researcher band combines proposing and revising ideas, then generalizing
+and proving results. A separate box embeds the supplied Lean logo and labels
+the final operation “Machine-check proofs”. Its arrow starts at the researcher
+analysis band; Python/Magma code checks and SAT/DRAT exclusions retain their
+separate routes. Appendix D focuses on the integrated Theorem 1 certificate; the supporting
+Lemma 2 certificate remains in the codebase.
+
+Generate native TikZ and the standalone source with:
+
+```bash
+python3 scripts/make_pipeline_overview.py --out-dir paper/manuscript/paper --standalone
+tectonic -X compile paper/manuscript/paper/fig_overview_standalone.tex
+```
+
+Export that PDF with `pdftocairo -svg` for the matching SVG. Figure geometry,
+arrows and type remain vector content; the supplied logos are embedded images.
+
+Figure 4 uses the original test cohort. Rebuild it with
+`python3 scripts/eaqecc_ablation/make_figure.py`. Figure 5 shows the separate
+32-seed repeat at all four lengths; rebuild it with
+`python3 scripts/eaqecc_ablation/make_followup_figure.py`. Both use the same
+LaTeX Times font as Figure 2 and export PDF/SVG/PNG. No cohorts are pooled.
+
+## Figure 5 and the Lean dependency diagram
+
+The manuscript now shows only n=13,15 in Figure 5. The shorter-length outcomes
+are retained numerically in the body, block table and source records. Generate
+the two-panel paper figure with `python scripts/eaqecc_ablation/make_followup_figure.py`.
+Use `--all-lengths` to generate `hitl_followup_all_lengths.{pdf,png,svg}` separately;
+this reproduces the complete four-panel record without overwriting the paper figure.
+
+Figure 6 is native TikZ in `paper/manuscript/paper/fig_lean_dependencies.tex`.
+It groups mathematical dependencies from the preserved `Theorem1.lean` source,
+not every declaration in its import graph. The dashed edge marks the standard
+stabilizer correspondence used in the paper, outside the algebraic certificate.

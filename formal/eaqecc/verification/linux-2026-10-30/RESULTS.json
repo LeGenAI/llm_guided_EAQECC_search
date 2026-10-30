@@ -1,0 +1,17 @@
+{
+  "Theorem1": {
+    "status": "PASS",
+    "exit": 0,
+    "wall_time": "0:20.17",
+    "peak_RSS_KiB": 6150088
+  },
+  "Lemma2": {
+    "status": "PASS",
+    "exit": 0,
+    "wall_time": "0:23.43",
+    "peak_RSS_KiB": 6164108
+  },
+  "source_manifest_before_and_after": "PASS",
+  "kernel_build": "PASS",
+  "nanoda": "disabled in the configurations; not run"
+}

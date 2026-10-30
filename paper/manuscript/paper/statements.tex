@@ -1,0 +1,62 @@
+% Headings follow the official template; factual disclosures follow the study record.
+\subsection*{AI use statement}
+We used Gemini models through AlphaEvolve and a local controller to
+propose and revise search programs under researcher guidance and exact
+evaluation feedback (Sections~\ref{sec:pipeline} and~\ref{sec:ablation}).
+LLM-based assistants, including Codex, supported implementation,
+mathematical reasoning and manuscript preparation. Generated codes were
+independently checked; Theorem~\ref{thm:unified}'s algebraic construction
+was verified in Lean. The authors reviewed AI-assisted outputs and take
+responsibility for the paper's claims, proofs, code and reported results.
+
+\subsection*{Ethics statement}
+This work studies algebraic code constructions and search programs;
+it does not involve experiments on human participants or use
+participant-level or personal datasets. Its potential benefit is to
+improve methods for quantum error correction and communication, while
+the reported idealized parameters do not establish hardware-level
+reliability or operational security. Research-integrity considerations
+are addressed through dated sources, explicit provenance, independent
+verification, and separation of new parameter claims from retrospective
+reconstruction. Unsuccessful searches are distinguished from proved
+nonexistence. The controlled-study records preserve failed and excluded
+attempts, unavailable responses and protocol amendments, and the released
+records omit account credentials and machine-local configuration.
+Researcher and AI contributions are disclosed, external sources are
+cited, and the artifact retains software licensing information. Compute
+allowances and model usage are documented in Appendices~\ref{app:campaign}
+and~\ref{app:ablations}.
+
+\subsection*{Reproducibility statement}
+The artifact supports reconstruction and independent checking of the
+mathematical outputs: generator matrices specify the finite codes,
+implementations generate family instances, and Appendix~\ref{app:theorem}
+provides the general construction and proof of Theorem~\ref{thm:unified}.
+The initial and later task specifications in Appendix~\ref{app:prompts}
+document the transition from initial search directions to reuse of
+the researcher-derived qubit family. Preserved programs can be replayed with fixed
+seeds and evaluation budgets as described in Section~\ref{sec:repro}
+and the \artifactlink{}. Appendix~\ref{app:ablations} and the accompanying
+study records supply generation requests, selections and held-out
+outcomes for the separate controlled comparison. Computational checks
+verify finite cases; general validity rests on the proof.
+Appendix~\ref{app:lean} gives the exact formal goal and proof structure
+for Theorem~\ref{thm:unified}. The artifact includes the Lean sources,
+pinned dependencies and separate kernel and Comparator verification records.
+Fresh LLM sampling is not part of this replay. External solver
+and Magma checks are reported separately from completed Python checks.
+The artifact is released under the MIT license and is available at
+\url{https://github.com/LeGenAI/llm_guided_EAQECC_search/tree/arxiv-v1}.
+
+\subsection*{Acknowledgments}
+We thank the maintainers of the tables of best-known
+codes~\citep{Codetables}.
+J.-L.~Kim was supported in part by the BK21 FOUR (Fostering Outstanding
+Universities for Research) funded by the Ministry of Education (MOE, Korea),
+National Research Foundation of Korea (NRF) under Grant
+No.~4120240415042, Basic Science Research Program through the National
+Research Foundation of Korea (NRF) funded by the Ministry of Science and ICT
+under Grant No.~RS-2025-24534992 and Global - Learning \& Academic research
+institution for Master's$\cdot$PhD students, and Postdocs (LAMP) Program of
+the National Research Foundation of Korea (NRF) grant funded by the Ministry
+of Education (No.~RS-2024-00441954).

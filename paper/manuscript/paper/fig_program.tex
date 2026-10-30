@@ -1,0 +1,70 @@
+% A schematic comparison of the archived campaign seed with rank05.
+% Symbolic rows illustrate allowed mutations, not additional measured codes.
+\begin{figure}[tb]
+\centering
+\resizebox{\linewidth}{!}{%
+\begin{tikzpicture}[x=1cm,y=1cm,>=stealth,
+  font=\rmfamily\fontsize{8.2}{9.8}\selectfont,
+  heading/.style={font=\rmfamily\bfseries\fontsize{9}{10.5}\selectfont},
+  rowlabel/.style={anchor=west,text width=2cm,font=\rmfamily\bfseries\fontsize{8.2}{9.8}\selectfont},
+  small/.style={font=\rmfamily\fontsize{7.4}{8.6}\selectfont},
+  box/.style={draw=black!28,rounded corners=2pt,fill=white,minimum height=.45cm,inner sep=4pt},
+  arr/.style={->,draw=black!55,line width=.65pt}]
+\path[use as bounding box] (0,-4.90) rectangle (15.8,.50);
+\fill[black!5,rounded corners=3pt] (2.25,-4.85) rectangle (7.40,.48);
+\fill[achieve!8,rounded corners=3pt] (7.65,-4.85) rectangle (15.8,.48);
+\node[heading] at (4.82,.22) {Campaign seed};
+\node[heading,text=achieve] at (11.72,.22) {Evolved program (Algorithm~\ref{alg:search})};
+\draw[black!16] (2.4,-.05)--(7.25,-.05);
+\draw[achieve!35] (7.8,-.05)--(15.65,-.05);
+\node[rowlabel] at (0,-.78) {Target\\selection};
+\node at (4.82,-.58) {$\pi_t\propto n_t^{-2}$};
+\node[small] at (4.82,-1.08) {fixed length-based weights};
+\node at (10.72,-.58) {$\pi_t\propto n_t^{-1.5}(1+10b_t)$};
+\node[box,small,text=achieve,draw=achieve!50] (score) at (14.40,-.63) {stored cost};
+\node[small,text=achieve] (bonus) at (12.65,-1.12) {near-miss bonus $b_t$};
+\draw[arr,draw=achieve] (score.south) |- (bonus.east);
+\draw[arr,draw=achieve] (bonus.west) -| (10.8,-.81);
+\draw[black!15] (2.4,-1.47)--(7.25,-1.47);
+\draw[achieve!25] (7.8,-1.47)--(15.65,-1.47);
+\node[rowlabel] at (0,-2.20) {Search\\initialization};
+\node[box] (fresh) at (3.85,-2.05) {fresh candidate};
+\node[box] (repair) at (6.25,-2.05) {repair};
+\draw[arr] (fresh)--(repair);
+\node[small] at (4.82,-2.63) {new initialization on each attempt};
+\node[box,draw=achieve!55] (saved) at (9.15,-2.05) {saved $best[t]$};
+\node[box,draw=achieve!55] (resume) at (11.95,-2.05) {resume repair};
+\node[box,draw=achieve!55] (update) at (14.55,-2.05) {update $best[t]$};
+\draw[arr,draw=achieve] (saved)--(resume);
+\draw[arr,draw=achieve] (resume)--(update);
+\draw[arr,draw=achieve] (update.south) -- (14.55,-2.70) -- (9.15,-2.70) -- (saved.south);
+\node[small,fill=achieve!8,inner sep=2pt,text=achieve] at (11.85,-2.70) {conditional reuse on a later attempt};
+\draw[black!15] (2.4,-3.03)--(7.25,-3.03);
+\draw[achieve!25] (7.8,-3.03)--(15.65,-3.03);
+\node[rowlabel] at (0,-3.94) {Generator\\mutation};
+% One Pauli row before and after a local update (seed).
+\foreach \i/\p in {0/X,1/I,2/Z,3/Y,4/I,5/X}{
+ \draw[fill=white,draw=black!20] (3.47+.45*\i,-3.62) rectangle ++(.43,.38);
+ \node[small] at (3.685+.45*\i,-3.43) {$\mathrm{\p}$};}
+\foreach \i/\p in {0/X,1/I,2/Z,3/Y,4/Z,5/X}{
+ \draw[fill=white,draw=black!20] (3.47+.45*\i,-4.29) rectangle ++(.43,.38);
+ \ifnum\i=4\fill[black!22] (3.47+.45*\i,-4.29) rectangle ++(.43,.38);\fi
+ \node[small] at (3.685+.45*\i,-4.10) {$\mathrm{\p}$};}
+\draw[arr] (4.82,-3.67)--(4.82,-3.86);
+\node[small] at (4.82,-4.61) {local Pauli update (example)};
+% A whole-row cyclic rotation is added by rank05; wrapped symbols are tinted.
+\foreach \i/\p in {0/X,1/I,2/Z,3/Y,4/I,5/X}{
+ \draw[fill=white,draw=achieve!30] (9.50+.45*\i,-3.62) rectangle ++(.43,.38);
+ \ifnum\i>3\fill[achieve!25] (9.50+.45*\i,-3.62) rectangle ++(.43,.38);\fi
+ \node[small] at (9.715+.45*\i,-3.43) {$\mathrm{\p}$};}
+\foreach \i/\p in {0/I,1/X,2/X,3/I,4/Z,5/Y}{
+ \draw[fill=white,draw=achieve!30] (9.50+.45*\i,-4.29) rectangle ++(.43,.38);
+ \ifnum\i<2\fill[achieve!25] (9.50+.45*\i,-4.29) rectangle ++(.43,.38);\fi
+ \node[small] at (9.715+.45*\i,-4.10) {$\mathrm{\p}$};}
+\draw[arr,draw=achieve] (10.85,-3.67)--(10.85,-3.86);
+\node[small,align=left,text=achieve] at (14.00,-3.80) {rotate one row\\by whole qubits};
+\node[small] at (11.72,-4.61) {row rotation added to the existing moves};
+\end{tikzpicture}}
+\caption{Program changes in Algorithm~\ref{alg:search} (schematic).}
+\label{fig:lineage}
+\end{figure}

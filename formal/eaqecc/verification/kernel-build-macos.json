@@ -1,0 +1,43 @@
+{
+  "date": "2026-10-30",
+  "platform": "macOS 26.6.2 arm64",
+  "lean": "Lean 4.29.0-rc6",
+  "result": "PASS",
+  "modules": [
+    "Definitions",
+    "Theorem1",
+    "Lemma2",
+    "Comparator.Theorem1Challenge",
+    "Comparator.Theorem1Solution",
+    "Comparator.Lemma2Challenge",
+    "Comparator.Lemma2Solution"
+  ],
+  "axioms": {
+    "EAQECCFamily.theorem1_closed_form": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "EAQECCFamily.theorem1_exact": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "EAQECCFamily.lemma2_coordinate_normalization": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "EAQECCFamily.Comparator.theorem1_exact_goal": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "EAQECCFamily.Comparator.lemma2_coordinate_normalization_goal": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ]
+  },
+  "sorry": "only the two Challenge statements"
+}
